@@ -41,7 +41,7 @@ The repository contains an **R Markdown** analysis document, a **Python** script
 ├── Pipeline.Rmd # R Markdown: pilot analysis & design decisions
 ├── Pipeline.html # Knitted R markdown
 ├── Bayesian_thresholds_estimation.py # Python: per-participant Bayesian threshold estimation
-├── threshold_esitmates.ipynb # Python: Jupyter notebook for visualiation and comparison of Bayesian thresholds
+├── threshold_estimates.ipynb # Python: Jupyter notebook for visualiation and comparison of Bayesian thresholds
 ├── Training.png # Schematic of the training experiment
 ├── Main.png # Schematic of the main experiment
 ├── threshold_comparison.png # Output: GLM vs Bayesian threshold estimate vs final opacity plot
