@@ -32,7 +32,7 @@ The repository contains an **R Markdown** analysis document, a **Python** script
 
 ## Background
 
- Participants view dynamic Gaussian noise and must either **discriminate** (training) or **detect** (main experiment) embedded face stimuli at varying opacity levels. We are tackling calibrating stimulus difficulty so that the task is neither too easy nor too hard for each individual, while preserving the key dependent variable of interest: **high-confidence false alarms (HCFA)** — instances where participants report seeing a face with high confidence when none is present.
+ Participants view dynamic Gaussian noise and must either **discriminate** (training) or **detect** (main experiment) embedded face stimuli at varying opacity levels. We are considering calibrating stimulus difficulty so that the task is neither too easy nor too hard for each individual, while preserving the key dependent variable of interest: **high-confidence false alarms (HCFA)** (where participants report seeing a face with high confidence when none is present).
 
 ---
 
