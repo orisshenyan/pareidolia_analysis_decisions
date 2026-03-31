@@ -17,7 +17,7 @@ The repository contains an **R Markdown** analysis document, a **Python** script
   - [Training experiment](#training-experiment)
   - [Main experiment](#main-experiment)
 - [Analysis overview](#analysis-overview)
-  - [Question 1 — group vs individual Thresholds](#question-1--group-vs-individual-thresholds)
+  - [Question 1 — group vs individual thresholds](#question-1--group-vs-individual-thresholds)
   - [Question 2 — block-wise opacity adjustment](#question-2--block-wise-opacity-adjustment)
   - [Bayesian threshold estimation](#bayesian-threshold-estimation)
 - [Data](#data)
@@ -88,7 +88,7 @@ The repository contains an **R Markdown** analysis document, a **Python** script
 
 ## Analysis overview
 
-### Question 1 — Group vs individual Thresholds
+### Question 1 — Group vs individual thresholds
 
 The R Markdown document investigates whether a single group-level opacity threshold adequately calibrates task difficulty for all participants, or whether individual thresholds are needed.
 
