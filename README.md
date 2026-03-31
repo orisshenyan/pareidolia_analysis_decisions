@@ -1,4 +1,4 @@
-# Pareidolia task — analysis & thresholding
+# Pareidolia task: analysis & thresholding
 
 Analysis pipeline for a pareidolia experiment investigating face perception in dynamic Gaussian noise. The following analysis addresses two key design decisions:
 
