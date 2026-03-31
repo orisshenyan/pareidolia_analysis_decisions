@@ -1,4 +1,4 @@
-# Pareidolia task — Analysis & Thresholding
+# Pareidolia task — analysis & thresholding
 
 Analysis pipeline for a pareidolia experiment investigating face perception in dynamic Gaussian noise. The following analysis addresses two key design decisions:
 
@@ -37,7 +37,7 @@ The repository contains an **R Markdown** analysis document, a **Python** script
 ---
 
 ## Project structure
-
+```
 ├── Pipeline.Rmd # R Markdown: pilot analysis & design decisions
 ├── Pipeline.html # Knitted R markdown
 ├── Bayesian_thresholds_estimation.py # Python: per-participant Bayesian threshold estimation
@@ -58,13 +58,13 @@ The repository contains an **R Markdown** analysis document, a **Python** script
 │ └── ...
 ├────── sub002/
 └── ...
-
+```
 
 ---
 
-## Task Overview
+## Task overview
 
-### Training Experiment
+### Training experiment
 
 - **Task type:** Two-alternative forced choice (2AFC)
 - **Trials:** 120 trials across 7 blocks
@@ -73,7 +73,7 @@ The repository contains an **R Markdown** analysis document, a **Python** script
 - **Responses:** Direction of the face (left/right) + confidence (1–4)
 - **Purpose:** Estimate each participant's psychometric function and perceptual threshold (opacity at 65% accuracy)
 
-### Main Experiment
+### Main experiment
 
 - **Task type:** Detection (present/absent)
 - **Duration:** ~5.5 minutes of continuous dynamic Gaussian noise
@@ -86,9 +86,9 @@ The repository contains an **R Markdown** analysis document, a **Python** script
 
 ---
 
-## Analysis Overview
+## Analysis overview
 
-### Question 1 — Group vs Individual Thresholds
+### Question 1 — Group vs individual Thresholds
 
 The R Markdown document investigates whether a single group-level opacity threshold adequately calibrates task difficulty for all participants, or whether individual thresholds are needed.
 
@@ -105,7 +105,7 @@ The R Markdown document investigates whether a single group-level opacity thresh
 
 **Key finding:** Participants within the group threshold CI show the most HCFA, suggesting that individual thresholding may be beneficial. Those who find the task too hard tend not to see anything, while those who find it too easy can distinguish faces from noise too readily.
 
-### Question 2 — Block-wise Opacity Adjustment
+### Question 2 — Block-wise opacity adjustment
 
 The analysis examines whether the current detection-based adjustment rule is sufficient, or whether adjustment should be based on **signal detection sensitivity (d')**.
 
@@ -129,13 +129,13 @@ This is a follow-up to question 1. The Python script (`Bayesian_threshold_estima
 
 The Bayesian models use **PyMC** (Abril-Pla et al., 2023) with MCMC sampling (4 chains × 2000 draws, target acceptance = 0.95). Posterior threshold samples are transformed to the 65% accuracy point via the inverse logistic equation.
 
-### Threshold Visualisation
+### Threshold visualisation
 
 The Jupyter Notebook (`threshold_estimates.ipynb`) provides a visual comparison of the threshold estimates produced by the Bayesian estimation script. It generates a two-panel figure (`threshold_comparison.png`):
 
 - **Top panel — GLM vs Bayesian:** Shows per-participant how much the informative Bayesian prior pulls the threshold estimate away from the pure-data frequentist GLM. Grey connector lines link each participant's two estimates; larger lines indicate stronger prior influence. A dashed horizontal reference line marks the prior mean (0.264).
 
-- **Bottom panel — Bayesian vs Final Opacity:** Compares each participant's Bayesian threshold estimate to the final opacity reached by the adaptive staircase procedure in the main experiment. Agreement between the two validates both methods; divergence may indicate that the staircase had not yet converged or that the Bayesian model is a poor fit for that participant.
+- **Bottom panel — Bayesian vs final opacity:** Compares each participant's Bayesian threshold estimate to the final opacity reached by the adaptive staircase procedure in the main experiment. Agreement between the two validates both methods; divergence may indicate that the staircase had not yet converged or that the Bayesian model is a poor fit for that participant.
 
 This notebook requires `threshold_estimates_with_opacity.csv`. The notebook adds the `final_opacity` column from the main experiment and should be run **after** `Bayesian_threshold_estimation.py`.
 
@@ -143,7 +143,7 @@ This notebook requires `threshold_estimates_with_opacity.csv`. The notebook adds
 
 ## Data
 
-### Data Structure
+### Data structure
 
 The pilot dataset consists of **41 participants**:
 - First half started at **26% opacity** (based on earlier pilot data)
