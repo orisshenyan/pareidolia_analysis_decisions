@@ -5,7 +5,7 @@ Analysis pipeline for a pareidolia experiment investigating face perception in d
 1. **Should face opacity in the main experiment be set using a group-level or individual-level perceptual threshold?**
 2. **How should opacity be adaptively adjusted across blocks during the main experiment?**
 
-The repository contains an **R Markdown** analysis document, a **Python** script for Bayesian psychometric threshold estimation, and a **Python** Jupyter notebook for visualisation of this Bayesian psychometric threshold.
+The repository contains an **R Markdown** analysis document, a **Python** and **R** script for Bayesian psychometric threshold estimation, and a **Python** Jupyter notebook for visualisation of this Bayesian psychometric threshold.
 
 ---
 
@@ -40,16 +40,16 @@ The repository contains an **R Markdown** analysis document, a **Python** script
 ```
 ├── Pipeline.Rmd # R Markdown: pilot analysis & design decisions
 ├── Pipeline.html # Knitted R markdown
-├── Bayesian_thresholds_estimation.py # Python: per-participant Bayesian threshold estimation
-├── threshold_estimates.ipynb # Python: Jupyter notebook for visualiation and comparison of Bayesian thresholds
+├── Bayesian_thresholds_estimation.py # Python: per-participant Bayesian threshold estimation using PyMC
+├── Bayesian_thresholds_estimation_BRMS.r # R: per-participant Bayesian threshold estimation using BRMS 
+├── Bayesian_Comparison.Rmd # R:  visualiation and comparison of Bayesian thresholds from PyMC and BRMS
 ├── Training.png # Schematic of the training experiment
 ├── Main.png # Schematic of the main experiment
-├── threshold_comparison.png # Output: GLM vs Bayesian threshold estimate vs final opacity plot
 └── Data/
 ├──── training_data.csv # Aggregated training data (all participants)
 ├──── main_data.csv # Aggregated main experiment data (all participants)
-├──── threshold_estimates.csv # Output: per-participant threshold estimates
-├──── threshold_estimates_with_opacity.csv # Output: thresholds with opacity info
+├──── threshold_estimates.csv # Output: per-participant threshold estimates generated using PyMC
+├──── threshold_estimates_BRMS.csv # Output: per-participant threshold estimates generated using BRMS
 └──── individual_data/ # Per-participant training and main experiment block CSVs (for blocks 0-6) and opacity levels
 ├────── sub001/
 │ ├────── sub001_trainingblock001.csv
@@ -119,7 +119,9 @@ The analysis examines whether the current detection-based adjustment rule is suf
 
 ### Bayesian threshold estimation
 
-This is a follow-up to question 1. The Python script (`Bayesian_threshold_estimation.py`) computes per-participant opacity thresholds using three methods:
+This is a follow-up to question 1. 
+
+#### The Python script (`Bayesian_threshold_estimation.py`) computes per-participant opacity thresholds using three methods:
 
 | Method | Prior | Slope | Description |
 |--------|-------|-------|-------------|
@@ -127,18 +129,38 @@ This is a follow-up to question 1. The Python script (`Bayesian_threshold_estima
 | **Bayesian (flat)** | Uniform(0.01, 0.99) | Fixed (7.60) | Minimal prior knowledge |
 | **Frequentist GLM** | None | Estimated | Classical logistic regression per participant |
 
-The Bayesian models use **PyMC** (Abril-Pla et al., 2023) with MCMC sampling (4 chains × 2000 draws, target acceptance = 0.95). Posterior threshold samples are transformed to the 65% accuracy point via the inverse logistic equation.
+The Bayesian models use **PyMC** (Abril-Pla et al., 2023) with MCMC sampling (4 chains × 4000 draws, target acceptance = 0.95). Posterior threshold samples are transformed to the 65% accuracy point via the inverse logistic equation. The slope is fixed at the mean (7.6)
 
-### Threshold visualisation
+Generates 'threshold_estimates.csv'
 
-The Jupyter Notebook (`threshold_estimates.ipynb`) provides a visual comparison of the threshold estimates produced by the Bayesian estimation script. It generates a two-panel figure (`threshold_comparison.png`):
+### The R script ('Bayesian_threshold_estimation.py' )
 
-- **Top panel — GLM vs Bayesian:** Shows per-participant how much the informative Bayesian prior pulls the threshold estimate away from the pure-data frequentist GLM. Grey connector lines link each participant's two estimates; larger lines indicate stronger prior influence. A dashed horizontal reference line marks the prior mean (0.264).
+Similarily measures per-participant opacity thresholds using a GLM and with an informative Bayesian prior using **brms**.
 
-- **Bottom panel — Bayesian vs final opacity:** Compares each participant's Bayesian threshold estimate to the final opacity reached by the adaptive staircase procedure in the main experiment. Agreement between the two validates both methods; divergence may indicate that the staircase had not yet converged or that the Bayesian model is a poor fit for that participant.
+Logit(0.65) shifts the sigmoid so that threshold directly represents the opacity at 65% accuracy rather than a posthoc transformation using PyMC. prior of the β (slope) is (7.6, 3) & constrained to be positive
 
-This notebook requires `threshold_estimates_with_opacity.csv`. The notebook adds the `final_opacity` column from the main experiment and should be run **after** `Bayesian_threshold_estimation.py`.
+The model is fitted per participant using MCMC sampling (4 chains × 4000 iterations, target acceptance .99).
 
+
+Generates 'threshold_estimates_BRMS.csv'.
+
+
+### Threshold Visualisation
+
+The R Markdown document (`Bayesian_Comparison.Rmd`) provides a visual comparison of the threshold estimates produced by both the Python (`Bayesian_threshold_estimation.py`) and R (`brms`) Bayesian estimation pipelines. It imports and merges threshold estimates from both frameworks alongside the final adaptive opacity reached per participant in the main experiment, producing three sets of comparison plots:
+
+- **Plot 1 — PyMC vs brms:** A direct comparison of the Bayesian threshold estimates generated by PyMC (Python) and brms (R) for each participant.
+
+- **Plot2 2 — GLM vs Bayesian (R and Python):** Two side-by-side plots showing, for each implementation, how much the informative Bayesian prior pulls each participant's threshold estimate away from the pfrequentist GLM.
+
+- **Plot 3 — Bayesian vs final Opacity (R and Python):** Two side-by-side plots comparing each participant's Bayesian threshold estimate (brms on the left, PyMC on the right) to the final opacity reached by the adaptive staircase procedure in the main experiment. 
+
+This document requires:
+- `Data/threshold_estimates.csv` (output from `Bayesian_threshold_estimation.py`)
+- `Data/threshold_estimates_BRMS.csv` (output from the brms estimation pipeline)
+- `Data/individual_data/*/final_opac.csv` (per-participant final opacity from the main experiment)
+
+It should be run **after** both `Bayesian_threshold_estimation.py` and the brms estimation script.
 ---
 
 ## Data
@@ -198,6 +220,8 @@ install.packages(c(
   "patchwork",
   "grid",
   "ggpubr"
+  "brms"
+  "purrr"
 ))
 
 ### Python dependencies

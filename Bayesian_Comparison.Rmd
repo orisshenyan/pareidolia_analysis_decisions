@@ -1,0 +1,233 @@
+---
+title: "Untitled"
+output: ''
+date: "2026-04-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(purrr)
+library(readr)
+library(ggpubr)
+library(ggplot2)
+```
+
+# Bayesian vs frequentist psychometric threshold estimates in BRMS and Python 
+
+## Import data
+I will first import and clean the threshold estimates for 65% accuracy from the data frame I already made by running Bayesian_threshold_estimation.py as well as the one I made from Bayesian_threshold_estimation_BRMS.py. 
+I will also add a column to this dataframe which adds the opacity of the final block per participant. This leaves us with the fata frame brms_pymc_opac
+
+```{r import and clean, echo=FALSE, message=FALSE, warning=FALSE}
+#import
+brms_estimates <- read.csv("Data/threshold_estimates_BRMS.csv")
+
+pymc_estimates <- read.csv("Data/threshold_estimates.csv")
+
+#clean to have same types and numbers of columns
+brms_clean <- brms_estimates %>%
+  rename(
+    threshold_glm_R = threshold_freq,
+    threshold_brms = threshold_bayes,
+    bayes_lower_brms = bayes_lower,
+    bayes_higher_brms = bayes_upper) %>%
+  select(-n_trials)
+
+
+
+pymc_clean <- pymc_estimates %>%
+    rename(
+    subnumber = subject,
+    threshold_glm_python = glm_threshold,
+    threshold_pymc = bayesian_informative,
+    bayes_lower_pymc = bayesian_info_hdi_low,
+    bayes_higher_pymc = bayesian_info_hdi_high) %>%
+  mutate(subnumber = sub("^sub", "", subnumber)) %>%
+  select(-bayesian_flat, -bayesian_flat_hdi_low, -bayesian_flat_hdi_high) 
+  
+
+#merge brms and python
+brms_pymc <- merge(pymc_clean, brms_clean, by = "subnumber") 
+
+# get all files ending with final_opac.csv
+files <- list.files(
+  "Data/individual_data",
+  pattern = "final_opac\\.csv$",
+  recursive = TRUE,
+  full.names = TRUE
+)
+
+# function to read + get last row + add subject id
+get_last_row <- function(file) {
+  df <- read_csv(file)
+  
+  # extract subject ID from folder name (e.g. "sub29MP")
+  sub_id <- basename(dirname(file))
+  
+  df %>%
+    slice_tail(n = 1) %>%   # last row
+    mutate(subnumber = sub("^sub", "", sub_id))  # remove "sub"
+}
+
+# apply to all files
+final_opac_data <- map_dfr(files, get_last_row)
+
+
+#clean opac data frame
+final_opac_data_renamed <- final_opac_data %>%
+  rename(final_opac = '0')
+
+#merge with final brms_pymc
+brms_pymc_opac <- merge(final_opac_data_renamed, brms_pymc, by = "subnumber")
+```
+## Plotting
+### PyMC vs BRMS
+I first want to compare the BRMS and the PyMC generated Bayesian estimates. Generally they are quite similar, with a trend for the PyMC estimates to be lower.
+```{r}
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+# --- Assuming your dataframe is called 'df' with 41 rows and 10 columns ---
+# Make sure subnumber is ordered as a factor for consistent plotting
+brms_pymc_opac$subnumber <- factor(brms_pymc_opac$subnumber, levels = brms_pymc_opac$subnumber)
+
+prior_mean <- 0.264  
+
+
+
+# ===================================================================
+# Plot 2: Bayesian R (brms) vs Bayesian Python (PyMC)
+# ===================================================================
+p2 <- ggplot(brms_pymc_opac) +
+  geom_segment(aes(x = subnumber, xend = subnumber,
+                    y = threshold_brms, yend = threshold_pymc),
+               color = "grey", linewidth = 0.8) +
+  geom_point(aes(x = subnumber, y = threshold_brms, color = "Bayesian (brms)"), size = 2) +
+  geom_point(aes(x = subnumber, y = threshold_pymc, color = "Bayesian (PyMC)"), size = 2) +
+  geom_hline(yintercept = prior_mean, linetype = "dashed", color = "coral", alpha = 0.4) +
+  scale_color_manual(values = c("Bayesian (brms)" = "coral", "Bayesian (PyMC)" = "darkred")) +
+  labs(y = "Threshold", title = "Bayesian: R (brms) vs Python (PyMC)", color = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.title.x = element_blank(),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+p2
+```
+### GLM estimates vs BRMS estimates in R and python
+I then want to compare how the GLM  estimate compares to the Bayesian estimate via PyMC and brms, i.e. the effect the prior (red-dashed line) has on the posterior
+```{r}
+# ===================================================================
+# Plot 3: GLM vs Bayesian in R
+# ===================================================================
+p3 <- ggplot(brms_pymc_opac) +
+  geom_segment(aes(x = subnumber, xend = subnumber,
+                    y = threshold_glm_R, yend = threshold_brms),
+               color = "grey", linewidth = 0.8) +
+  geom_point(aes(x = subnumber, y = threshold_glm_R, color = "GLM (R)"), size = 2) +
+  geom_point(aes(x = subnumber, y = threshold_brms, color = "Bayesian (brms)"), size = 2) +
+  geom_hline(yintercept = prior_mean, linetype = "dashed", color = "coral", alpha = 0.4) +
+  scale_color_manual(values = c("GLM (R)" = "steelblue", "Bayesian (brms)" = "coral")) +
+  labs(y = "Threshold", title = "R: GLM vs Bayesian (brms)", color = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.title.x = element_blank(),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+
+
+# ===================================================================
+# Plot 4: GLM vs Bayesian in Python
+# ===================================================================
+p4 <- ggplot(brms_pymc_opac) +
+  geom_segment(aes(x = subnumber, xend = subnumber,
+                    y = threshold_glm_python, yend = threshold_pymc),
+               color = "grey", linewidth = 0.8) +
+  geom_point(aes(x = subnumber, y = threshold_glm_python, color = "GLM (Python)"), size = 2) +
+  geom_point(aes(x = subnumber, y = threshold_pymc, color = "Bayesian (PyMC)"), size = 2) +
+  geom_hline(yintercept = prior_mean, linetype = "dashed", color = "coral", alpha = 0.4) +
+  scale_color_manual(values = c("GLM (Python)" = "darkblue", "Bayesian (PyMC)" = "darkred")) +
+  labs(y = "Threshold", title = "Python: GLM vs Bayesian (PyMC)", color = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.title.x = element_blank(),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+
+# ===================================================================
+# Combine all 4 plots in a 2x2 grid
+# ===================================================================
+combined <- (p3 + p4) +
+  plot_annotation(
+    title = "Threshold Comparison: GLM vs Bayesian",
+    theme = theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14))
+  )
+
+print(combined)
+```
+Finally I want to compare how the final opacity at the end of the main experiment (e.g. this should be when the individual has appropriately adjusted) compares to the Bayesian estimate via PyMC and brms
+```{r}
+# ===================================================================
+# Plot 3: GLM vs Bayesian in R
+# ===================================================================
+p5 <- ggplot(brms_pymc_opac) +
+  geom_segment(aes(x = subnumber, xend = subnumber,
+                    y = final_opac, yend = threshold_brms),
+               color = "grey", linewidth = 0.8) +
+  geom_point(aes(x = subnumber, y = final_opac, color = "Final opacity in experiment"), size = 2) +
+  geom_point(aes(x = subnumber, y = threshold_brms, color = "Bayesian (brms)"), size = 2) +
+  geom_hline(yintercept = prior_mean, linetype = "dashed", color = "coral", alpha = 0.4) +
+  scale_color_manual(values = c("Final opacity in experiment" = "darkgreen", "Bayesian (brms)" = "coral")) +
+  labs(y = "Threshold", title = "Final opacity in experiment vs Bayesian (brms) estimate", color = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.title.x = element_blank(),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+
+
+# ===================================================================
+# Plot 4: GLM vs Bayesian in Python
+# ===================================================================
+p6 <- ggplot(brms_pymc_opac) +
+  geom_segment(aes(x = subnumber, xend = subnumber,
+                    y = final_opac, yend = threshold_pymc),
+               color = "grey", linewidth = 0.8) +
+  geom_point(aes(x = subnumber, y = final_opac, color = "Final opacity in experiment"), size = 2) +
+  geom_point(aes(x = subnumber, y = threshold_pymc, color = "Bayesian (PyMC)"), size = 2) +
+  geom_hline(yintercept = prior_mean, linetype = "dashed", color = "coral", alpha = 0.4) +
+  scale_color_manual(values = c("Final opacity in experiment" = "darkgreen", "Bayesian (PyMC)" = "darkred")) +
+  labs(y = "Threshold", title = "Final opacity in experiment vs Bayesian (PyMC)", color = NULL) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.title.x = element_blank(),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+
+# ===================================================================
+# Combine all 4 plots in a 2x2 grid
+# ===================================================================
+combined <- (p5 + p6) +
+  plot_annotation(
+    title = "Final opacity in main experiment vs Bayesian",
+    theme = theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14))
+  )
+
+print(combined)
+```
+

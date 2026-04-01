@@ -318,7 +318,7 @@ for (pg in seq_len(n_pages)) {
 
 ```
 
-We then want to extract each individuals 65% accuracy threshold form the training task. We are then just plotting the mean and the confidence interval based on the current data-set (not bootstrapped) for the purpose of this analysis. I want to see which participants  were thresholded correctly when starting the main experiment (e.g. their individual threshold was within the group perceptual threshold confidence interval), and which were not thresholded correctly when starting the main experiment (e.g. their individual threshold was above or below the group perceptual threshold confidence interval), and how various outcomes differ between these groups.
+We then want to extract each individuals 65% accuracy threshold from the training task. We are then just plotting the mean and the confidence interval based on the current data-set (not bootstrapped) for the purpose of this analysis. I want to see which participants  were thresholded correctly when starting the main experiment (e.g. their individual threshold was within the group perceptual threshold confidence interval), and which were not thresholded correctly when starting the main experiment (e.g. their individual threshold was above or below the group perceptual threshold confidence interval), and how various outcomes differ between these groups.
 
 The current plot shows more clearly the individual threshold outliers as well as the three groups (below CI = probably found the task easy, within CI = probably found the task appropriately difficult, above CI = probably found the task more difficult).
 ```{r plot threshold}
@@ -523,7 +523,9 @@ p3
 
 We now want to see: if we do threshold people correctly (e.g, make the experiment easier for those who have higher individual thresholds), will it get rid of the main effect of interest (the HCFA?). That doesn't appear to be the case. It seems to be that those who have more high confidence false alarms are those who are thresholded correctly. It may be that those who find the task too difficult are just not seeing anything at all, and for those who find the task easiest, they can clearly see the distinction between faces and noise. 
 
-It therefore may make sense to adjust the thresholding per participant, which is illustrated in the Jupyter notebook 'Bayesian_Thresholds'.  
+It therefore may make sense to adjust the thresholding per participant, which is illustrated in the Jupyter notebook 'Bayesian_Thresholds'. 
+
+
 
 ```{r hcfa_group_lines}
 # Step 1: Count FA and HCFA (high-confidence FA: confidence ≥ 3) per subject per block
@@ -584,6 +586,20 @@ p4 <- ggplot(hcfa_group, aes(x = block_number, y = mean_HCFA,
 p4
 
 ```
+
+
+I am also now estimating the slopes of each person curve for the prior.
+
+```{r slopes}
+pilot_slopes <- training2 %>%
+  group_by(subnumber) %>%
+  summarise(
+    slope = coef(glm(Correct_Response ~ Opacity, family = binomial))[2]
+  )
+
+summary(pilot_slopes$slope)
+```
+
 #### Question 2 - How should we be adjusting throughout the experiment
 I am now creating the signal detection parameters from the raw data.
 ```{r sdt_meta}
