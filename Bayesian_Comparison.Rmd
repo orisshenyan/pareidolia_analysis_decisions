@@ -42,12 +42,12 @@ brms_clean <- brms_estimates %>%
 pymc_clean <- pymc_estimates %>%
     rename(
     subnumber = subject,
-    threshold_glm_python = glm_threshold,
-    threshold_pymc = bayesian_informative,
-    bayes_lower_pymc = bayesian_info_hdi_low,
-    bayes_higher_pymc = bayesian_info_hdi_high) %>%
+    threshold_glm_python = threshold_freq,
+    threshold_pymc = threshold_bayes,
+    bayes_lower_pymc = bayes_lower,
+    bayes_higher_pymc = bayes_upper) %>%
   mutate(subnumber = sub("^sub", "", subnumber)) %>%
-  select(-bayesian_flat, -bayesian_flat_hdi_low, -bayesian_flat_hdi_high) 
+  select(-n_trials)
   
 
 #merge brms and python
@@ -86,7 +86,7 @@ brms_pymc_opac <- merge(final_opac_data_renamed, brms_pymc, by = "subnumber")
 ```
 ## Plotting
 ### PyMC vs BRMS
-I first want to compare the BRMS and the PyMC generated Bayesian estimates. Generally they are quite similar, with a trend for the PyMC estimates to be lower.
+I first want to compare the BRMS and the PyMC generated Bayesian estimates. Generally they are extremely similar.
 ```{r}
 library(ggplot2)
 library(dplyr)

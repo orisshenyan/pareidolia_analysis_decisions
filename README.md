@@ -119,30 +119,62 @@ The analysis examines whether the current detection-based adjustment rule is suf
 
 ### Bayesian threshold estimation
 
-This is a follow-up to question 1. 
+This is a follow-up to question 1.
 
-#### The Python script (`Bayesian_threshold_estimation.py`) computes per-participant opacity thresholds using three methods:
+Both scripts estimate per-participant opacity thresholds (the opacity at which
+accuracy = 65%) using two methods: a Bayesian model with an informative prior
+and a classical frequentist logistic regression (GLM). 
 
-| Method | Prior | Slope | Description |
-|--------|-------|-------|-------------|
-| **Bayesian (informative)** | Normal(0.264, 0.085) | Fixed (7.60) | Pilot-informed prior on threshold location |
-| **Bayesian (flat)** | Uniform(0.01, 0.99) | Fixed (7.60) | Minimal prior knowledge |
-| **Frequentist GLM** | None | Estimated | Classical logistic regression per participant |
+---
 
-The Bayesian models use **PyMC** (Abril-Pla et al., 2023) with MCMC sampling (4 chains × 4000 draws, target acceptance = 0.95). Posterior threshold samples are transformed to the 65% accuracy point via the inverse logistic equation. The slope is fixed at the mean (7.6)
+#### Common model structure
 
-Generates 'threshold_estimates.csv'
+| Component | Detail |
+|-----------|--------|
+| **Psychometric function** | `p(correct) = sigmoid(β × (Opacity − threshold) + logit(0.65))` |
+| **Threshold parameter** | Directly represents the 65% accuracy point |
+| **Threshold prior** | Normal(0.264, 0.085) — from pilot data |
+| **Slope (β) prior** | Normal(7.6, 3), lower-bounded at 0 — from pilot data |
+| **Likelihood** | Bernoulli (trial-level) |
+| **MCMC settings** | 4 chains × 4000 iterations (2000 warmup + 2000 sampling), target acceptance = 0.99 |
+| **Point estimate** | Posterior median |
+| **Uncertainty interval** | 95% equal-tailed credible interval (2.5th–97.5th percentiles) |
+| **Frequentist GLM** | Standard logistic regression freely estimating both intercept and slope; threshold derived algebraically |
 
-### The R script ('Bayesian_threshold_estimation.py' )
+---
 
-Similarily measures per-participant opacity thresholds using a GLM and with an informative Bayesian prior using **brms**.
+#### Python script (`Bayesian_threshold_estimation.py`)
 
-Logit(0.65) shifts the sigmoid so that threshold directly represents the opacity at 65% accuracy rather than a posthoc transformation using PyMC. prior of the β (slope) is (7.6, 3) & constrained to be positive
+Uses **PyMC** (Abril-Pla et al., 2023) for Bayesian estimation. The slope is
+estimated via a `TruncatedNormal` prior (lower bound = 0), and logit(0.65) is
+embedded directly in the sigmoid so that the threshold parameter represents the
+65% accuracy point without post-hoc transformation. The frequentist GLM uses
+**statsmodels**.
 
-The model is fitted per participant using MCMC sampling (4 chains × 4000 iterations, target acceptance .99).
+Generates `threshold_estimates.csv`.
 
+#### R script (`Bayesian_threshold_estimation_BRMS.R`)
 
-Generates 'threshold_estimates_BRMS.csv'.
+Uses **brms** (Bürkner, 2017) for Bayesian estimation with an identical
+non-linear formula. The slope (β) is estimated with a Normal(7.6, 3) prior
+constrained to be positive (`lb = 0`), and logit(0.65) is baked into the model
+formula so that the threshold directly represents the 65% accuracy point. The
+frequentist GLM uses base R's `glm()`.
+
+Generates `threshold_estimates_BRMS.csv`.
+
+---
+
+#### Output columns (both scripts)
+
+| Column | Description |
+|--------|-------------|
+| `subject` / `subnumber` | Participant identifier |
+| `threshold_freq` | Frequentist GLM threshold (65% accuracy point) |
+| `threshold_bayes` | Posterior median of the Bayesian threshold |
+| `bayes_lower` | 2.5th percentile of the posterior (lower bound of 95% CI) |
+| `bayes_upper` | 97.5th percentile of the posterior (upper bound of 95% CI) |
+| `n_trials` | Total number of training trials for the participant |
 
 
 ### Threshold Visualisation
